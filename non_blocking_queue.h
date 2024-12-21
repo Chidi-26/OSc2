@@ -2,9 +2,12 @@
 #define _NON_BLOCKING_QUEUE_H_
 
 #include "list.h"
+#include "pthread.h"
 
 typedef struct NonBlockingQueue {
   /* Add fields as needed */
+  pthread_mutex_t queueLock; //mutex
+  ListT* list; // Holds queue elements
 } NonBlockingQueueT;
 
 void non_blocking_queue_create(NonBlockingQueueT* queue);
