@@ -1,3 +1,4 @@
+// Student : Chidi Ikwunze ID : 20473929
 #ifndef _NON_BLOCKING_QUEUE_H_
 #define _NON_BLOCKING_QUEUE_H_
 
@@ -6,7 +7,7 @@
 
 typedef struct NonBlockingQueue {
   /* Add fields as needed */
-  pthread_mutex_t queueLock; //mutex
+  pthread_mutex_t queueLock; //mutex ID
   ListT* list; // Holds queue elements
 } NonBlockingQueueT;
 
