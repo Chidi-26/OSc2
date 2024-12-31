@@ -1,3 +1,4 @@
+// Student : Chidi Ikwunze ID : 20473929
 #include "event_source.h"
 #include "utilities.h"
 #include "simulator.h"
@@ -36,6 +37,6 @@ void event_source_stop() {
         fprintf(stderr, "ERROR: unable to join event thread\n");
         exit(EXIT_FAILURE);
     }
-    logger_write("Event thread has stopped");
+    logger_write("Event source has stopped");
 }
 

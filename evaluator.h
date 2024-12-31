@@ -1,4 +1,3 @@
-// Student : Chidi Ikwunze ID : 20473929
 #ifndef _EVALUATOR_H_
 #define _EVALUATOR_H_
 
