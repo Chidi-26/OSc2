@@ -1,3 +1,4 @@
+// Student : Chidi Ikwunze ID : 20473929
 #include "simulator.h"
 #include "list.h"
 #include "non_blocking_queue.h"
@@ -28,6 +29,7 @@ BlockingQueueT readyQueue; // queue for ready processes
 static unsigned int maxProcesses = 0; //initialising max processes
 static pthread_mutex_t processTableLock; //process table lock
 static ListT* pTable = NULL; //initialsing process table
+BlockingQueueT eventQueue; // event queue
 
 
 static ProcessT* getProcessId(ProcessIdT processId){
@@ -70,10 +72,17 @@ void* simulator_routine(void *arg){
 
       simulator_wait(processId); //wait for process to finish executing
     }
+    //if time slice ends, return the process id back into the ready queue 
     if(resultState.reason == reason_timeslice_ended){
+      blocking_queue_push(&readyQueue, processId); // requeuing current process in the ready queue
       snprintf(message, sizeof(message), "Process %u has timesliced ended, so requeuing", currProcess->processId);
       logger_write(message);
-      blocking_queue_push(&readyQueue, processId); // requeuing current process in the ready queue
+    }
+    // if blocked move process 
+    if(resultState.reason == reason_blocked){
+      blocking_queue_push(&eventQueue, currProcess->processId);
+      snprintf(message, sizeof(message), "Process %u has blocked so moving to event queue", currProcess->processId);
+      logger_write(message);
     }
     
   }
@@ -93,6 +102,7 @@ void simulator_start(int thread_count, int max_processes) {
   //creating ques and process table list
   blocking_queue_create(&pidQueue);
   blocking_queue_create(&readyQueue);
+  blocking_queue_create(&eventQueue);
   pTable = list_create();
 
   pthread_mutex_init(&processTableLock, NULL); //initialising lock
@@ -131,6 +141,7 @@ void simulator_stop() {
 
   blocking_queue_destroy(&pidQueue);
   blocking_queue_destroy(&readyQueue);
+  blocking_queue_destroy(&eventQueue);
   list_destroy(pTable);
 
   logger_stop(); // stopping logger
@@ -144,7 +155,7 @@ ProcessIdT simulator_create_process(EvaluatorCodeT const code) {
     fprintf(stderr,"ERROR,unable to retrive process id\n"); // error message
     exit(EXIT_FAILURE); //exit
   }
-  
+
   ProcessT* newProcess = checked_malloc(sizeof(ProcessT)); // allocating space for ProcessT data
   newProcess->processId = pid; //setting unique process id
   newProcess->evalCode = code; //setting process evaluator code
@@ -188,4 +199,13 @@ void simulator_kill(ProcessIdT pid) {
 }
 
 void simulator_event() {
+  ProcessIdT processId;
+
+  // moving event queue process id into the front of the ready queue
+  if(blocking_queue_pop(&eventQueue, &processId) == 0){
+    blocking_queue_push(&readyQueue, processId); 
+  }
+  char message[100]; // message buffer
+  snprintf(message, sizeof(message), "Event process id %u has been moved to ready queue", processId);
+  logger_write(message); // printing message indicating the specific process id from the event queue which has been added the the frony of the ready queue
 }
