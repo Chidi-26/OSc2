@@ -18,7 +18,7 @@ static unsigned int globalThreadCount = 0;
 static pthread_t* threadEnv = NULL;
 static EnvThreadDataT* threadData = NULL;
 
-void* terminating_routine(void* agrument){
+void* blocking_routine(void* agrument){
 	EnvThreadDataT *tData = (EnvThreadDataT*)agrument; //casting argument to environment thread data type
 	ProcessIdT processIds[tData->batchSize]; // holds all process ids
 
@@ -36,7 +36,7 @@ void* terminating_routine(void* agrument){
 			processIds[l] = simulator_create_process(evaluator_blocking_terminates_after(5)); // finishes after 5processe have been simulated
 		}
 
-		//waits for process to finish
+		//waits for process to finish - used a seperate for loop for concurrency reasons - run multiple threads at once
 		for(unsigned int k = 0; k < tData->batchSize; k++){
 			simulator_wait(processIds[k]);
 		}
@@ -61,7 +61,7 @@ void environment_start(unsigned int thread_count,
 					threadData[i].iterations = iterations; //assigning iterations within thread with iterations arg
 					threadData[i].threadId = i; // assigning thread id with unique unsigned int
 
-					if(pthread_create(threadEnv, NULL, terminating_routine, &threadData[i]) != 0){ //If thread is unable to be created
+					if(pthread_create(threadEnv, NULL, blocking_routine, &threadData[i]) != 0){ //If thread is unable to be created
 						fprintf(stderr, "ERRPR: unable to make an environment thread\n"); //error message
 						exit(EXIT_FAILURE); // exxit program
 					}

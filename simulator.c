@@ -17,6 +17,7 @@ typedef struct Process{
   int isRunning; // flag to see if process is running
   ProcessIdT processId; // process id unique to current process
   EvaluatorCodeT evalCode; // simulate process execution
+  int hasTerminated; // flag to check if process has terminated
 }ProcessT;
 
 
@@ -60,8 +61,8 @@ void* simulator_routine(void *arg){
     }
 
     ProcessT* currProcess = getProcessId(processId); //getting process id from the current running process
-    if(!currProcess){
-      continue; // if current process equals null skill to the next one
+    if(!currProcess || currProcess->hasTerminated == 1){
+      continue; // if current process equals null or has terminated skip to the next one
     }
 
     EvaluatorResultT resultState = evaluator_evaluate(currProcess->evalCode, 0); //simulating running code
@@ -196,6 +197,18 @@ void simulator_wait(ProcessIdT pid) {
 }
 
 void simulator_kill(ProcessIdT pid) {
+  ProcessT* runningProcess = getProcessId(pid);
+
+  if(!runningProcess){
+    return;
+  }
+  pthread_mutex_lock(&runningProcess->pLock);
+  runningProcess->isRunning = 1; 
+  pthread_mutex_unlock(&runningProcess->pLock);
+
+  char mess[105];
+  snprintf(mess,sizeof(mess),"Process %u has been killed", runningProcess->processId);
+  logger_write(mess);
 }
 
 void simulator_event() {
